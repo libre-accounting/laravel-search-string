@@ -18,7 +18,7 @@ class VisitorValidateRulesTest extends VisitorTest
         ];
     }
 
-    public function failure()
+    public static function failure()
     {
         return [
             // QuerySymbol.

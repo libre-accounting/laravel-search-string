@@ -143,7 +143,17 @@ class BuildColumnsVisitor extends Visitor
             return $this->builder->where($where[0], $where[1], $where[2], $this->boolean);
         }
 
-        return $this->builder->where($wheres->toArray(), null, null, $this->boolean);
+        // Add each column explicitly inside a nested group rather than passing an
+        // array of `[column, operator, value, boolean]` tuples to `where()`. In
+        // Laravel 11+, `Builder::addArrayOfWheres()` forwards every tuple with a
+        // named `boolean:` argument, which throws "Named parameter $boolean overwrites
+        // previous argument" on 4-element tuples and would otherwise override the
+        // per-column boolean with the outer one.
+        return $this->builder->where(function ($query) use ($wheres) {
+            foreach ($wheres as [$column, $operator, $value, $boolean]) {
+                $query->where($column, $operator, $value, $boolean);
+            }
+        }, null, null, $this->boolean);
     }
 
     protected function buildSearchWhereClause(SoloSymbol $solo, $column): array
@@ -219,10 +229,15 @@ class BuildColumnsVisitor extends Visitor
         $column = $rule->qualifyColumn($this->builder);
         $exclude = in_array($query->operator, ['!=', 'not in']);
 
-        return $this->builder->where([
-            [$column, ($exclude ? '<' : '>='), $start, $this->boolean],
-            [$column, ($exclude ? '>' : '<='), $end, $this->boolean],
-        ], null, null, $this->boolean);
+        // Inside the range: start <= column <= end. Outside the range: column < start
+        // OR column > end. The inner boolean must not follow the outer one, otherwise
+        // an exclusion can never match and a range inside an "or" matches everything.
+        $innerBoolean = $exclude ? 'or' : 'and';
+
+        return $this->builder->where(function ($nested) use ($column, $exclude, $start, $end, $innerBoolean) {
+            $nested->where($column, ($exclude ? '<' : '>='), $start, $innerBoolean);
+            $nested->where($column, ($exclude ? '>' : '<='), $end, $innerBoolean);
+        }, null, null, $this->boolean);
     }
 
     protected function buildBasicQuery(QuerySymbol $query, ColumnRule $rule)

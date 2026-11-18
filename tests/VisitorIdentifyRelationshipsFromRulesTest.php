@@ -19,7 +19,7 @@ class VisitorIdentifyRelationshipsFromRulesTest extends VisitorTest
         ];
     }
 
-    public function success()
+    public static function success()
     {
         return [
             // It recognises solo symbols.

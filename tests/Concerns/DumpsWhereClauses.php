@@ -5,7 +5,6 @@ namespace Lorisleiva\LaravelSearchString\Tests\Concerns;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Query\Expression;
-use Illuminate\Database\Query\Grammars\MySqlGrammar;
 
 trait DumpsWhereClauses
 {
@@ -19,7 +18,7 @@ trait DumpsWhereClauses
             $query = $query->getQuery();
         }
 
-        return collect($query->wheres)->mapWithKeys(function ($where, $i){
+        return collect($query->wheres)->mapWithKeys(function ($where, $i) use ($query) {
             $where = (object) $where;
             $key = "$where->type[{$where->boolean}][$i]";
 
@@ -29,7 +28,7 @@ trait DumpsWhereClauses
             }
 
             $column = $where->column instanceof Expression
-                ? $where->column->getValue(new MySqlGrammar())
+                ? $where->column->getValue($query->getGrammar())
                 : $where->column;
 
             $value = $where->value ?? $where->values ?? null;

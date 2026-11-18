@@ -29,7 +29,7 @@ class VisitorOptimizeAstTest extends VisitorTest
         ];
     }
 
-    public function success()
+    public static function success()
     {
         return [
             // Flatten And/Or.

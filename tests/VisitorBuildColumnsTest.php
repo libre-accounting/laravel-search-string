@@ -120,6 +120,44 @@ class VisitorBuildColumnsTest extends VisitorTest
     }
 
     /** @test */
+    public function it_searches_across_more_than_two_searchable_columns()
+    {
+        $model = $this->getModelWithColumns([
+            'name' => ['searchable' => true],
+            'sku' => ['searchable' => true],
+            'description' => ['searchable' => true],
+            'price',
+        ]);
+
+        $this->assertWhereClauses('foobar', [
+            'Nested[and][0]' => [
+                'Basic[or][0]' => 'models.name like %foobar%',
+                'Basic[or][1]' => 'models.sku like %foobar%',
+                'Basic[or][2]' => 'models.description like %foobar%',
+            ]
+        ], $model);
+
+        $this->assertWhereClauses('not foobar', [
+            'Nested[and][0]' => [
+                'Basic[and][0]' => 'models.name not like %foobar%',
+                'Basic[and][1]' => 'models.sku not like %foobar%',
+                'Basic[and][2]' => 'models.description not like %foobar%',
+            ]
+        ], $model);
+
+        $this->assertWhereClauses('price>10 or not foobar', [
+            'Nested[and][0]' => [
+                'Basic[or][0]' => 'models.price > 10',
+                'Nested[or][1]' => [
+                    'Basic[and][0]' => 'models.name not like %foobar%',
+                    'Basic[and][1]' => 'models.sku not like %foobar%',
+                    'Basic[and][2]' => 'models.description not like %foobar%',
+                ],
+            ]
+        ], $model);
+    }
+
+    /** @test */
     public function it_does_not_add_where_clause_if_no_searchable_columns_were_given()
     {
         $model = $this->getModelWithOptions([]);

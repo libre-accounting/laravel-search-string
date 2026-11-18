@@ -17,6 +17,11 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         $app['config']->set('search-string', include __DIR__ . '/../src/config.php');
+
+        // Expected SQL in the tests is written against the MySQL grammar. Testbench
+        // used to default to MySQL; since Laravel 11 it defaults to SQLite.
+        // Queries are only compiled to SQL here, never executed.
+        $app['config']->set('database.default', 'mysql');
     }
 
     public function getModelWithOptions($options)
@@ -27,7 +32,9 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             protected $table = 'models';
             protected $options = [];
 
-            public function __construct($options)
+            // Optional because Laravel 11+ instantiates the model without
+            // arguments while booting (e.g. `HasEvents::observe()`).
+            public function __construct($options = [])
             {
                 parent::__construct();
                 $this->options = $options;

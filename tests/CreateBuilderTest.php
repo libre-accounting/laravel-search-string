@@ -2,6 +2,7 @@
 
 namespace Lorisleiva\LaravelSearchString\Tests;
 
+use Illuminate\Support\Carbon;
 use Lorisleiva\LaravelSearchString\Exceptions\InvalidSearchStringException;
 use Lorisleiva\LaravelSearchString\Tests\Concerns\DumpsSql;
 use Lorisleiva\LaravelSearchString\Tests\Stubs\Product;
@@ -11,7 +12,7 @@ class CreateBuilderTest extends TestCase
 {
     use DumpsSql;
 
-    public function success()
+    public static function success()
     {
         return [
             // It does not filter anything by default.
@@ -68,10 +69,10 @@ class CreateBuilderTest extends TestCase
         ];
     }
 
-    public function successWhereOnly()
+    public static function successWhereOnly()
     {
-        $tomorrowStart = now()->addDay()->startOfDay();
-        $tomorrowEnd = now()->addDay()->endOfDay();
+        $tomorrowStart = Carbon::now()->addDay()->startOfDay();
+        $tomorrowEnd = Carbon::now()->addDay()->endOfDay();
 
         return [
             // Assignments.
@@ -100,7 +101,9 @@ class CreateBuilderTest extends TestCase
             ['created_at >= 2020', "products.created_at >= 2020-01-01 00:00:00"],
             ['created_at > 2020', "products.created_at > 2020-12-31 23:59:59"],
             ['created_at = 2020', "(products.created_at >= 2020-01-01 00:00:00 and products.created_at <= 2020-12-31 23:59:59)"],
-            ['not created_at = 2020', "(products.created_at < 2020-01-01 00:00:00 and products.created_at > 2020-12-31 23:59:59)"],
+            ['not created_at = 2020', "(products.created_at < 2020-01-01 00:00:00 or products.created_at > 2020-12-31 23:59:59)"],
+            ['name:John or created_at = 2020', "(products.name = 'John' or (products.created_at >= 2020-01-01 00:00:00 and products.created_at <= 2020-12-31 23:59:59))"],
+            ['name:John or not created_at = 2020', "(products.name = 'John' or (products.created_at < 2020-01-01 00:00:00 or products.created_at > 2020-12-31 23:59:59))"],
 
             // Dates month precision.
             ['created_at = 01/2020', "(products.created_at >= 2020-01-01 00:00:00 and products.created_at <= 2020-01-31 23:59:59)"],
@@ -112,7 +115,7 @@ class CreateBuilderTest extends TestCase
             ['created_at = 2020-12-31', "(products.created_at >= 2020-12-31 00:00:00 and products.created_at <= 2020-12-31 23:59:59)"],
             ['created_at >= 12/31/2020', "products.created_at >= 2020-12-31 00:00:00"],
             ['created_at = 2018-05-17', "(products.created_at >= 2018-05-17 00:00:00 and products.created_at <= 2018-05-17 23:59:59)"],
-            ['not created_at = 2018-05-17', "(products.created_at < 2018-05-17 00:00:00 and products.created_at > 2018-05-17 23:59:59)"],
+            ['not created_at = 2018-05-17', "(products.created_at < 2018-05-17 00:00:00 or products.created_at > 2018-05-17 23:59:59)"],
             ['created_at = "May 17 2018"', "(products.created_at >= 2018-05-17 00:00:00 and products.created_at <= 2018-05-17 23:59:59)"],
 
             // Dates hour precision.
@@ -150,6 +153,13 @@ class CreateBuilderTest extends TestCase
             ['John', "(products.name like '%John%' or products.description like '%John%')"],
             ['"John Doe"', "(products.name like '%John Doe%' or products.description like '%John Doe%')"],
             ['not John', "(products.name not like '%John%' and products.description not like '%John%')"],
+
+            // Search combined with other clauses stays grouped.
+            ['price>10 John', "(products.price > 10 and (products.name like '%John%' or products.description like '%John%'))"],
+            ['price>10 not John', "(products.price > 10 and (products.name not like '%John%' and products.description not like '%John%'))"],
+            ['price>10 or John', "(products.price > 10 or (products.name like '%John%' or products.description like '%John%'))"],
+            ['price>10 or not John', "(products.price > 10 or (products.name not like '%John%' and products.description not like '%John%'))"],
+            ['John not Doe', "((products.name like '%John%' or products.description like '%John%') and (products.name not like '%Doe%' and products.description not like '%Doe%'))"],
 
             // Nested And/Or where clauses.
             ['name:John and price>0', "(products.name = 'John' and products.price > 0)"],
@@ -209,7 +219,7 @@ class CreateBuilderTest extends TestCase
         ];
     }
 
-    public function expectInvalidSearchStringException()
+    public static function expectInvalidSearchStringException()
     {
         return [
             'Limit should be a positive integer' => ['limit:-1'],

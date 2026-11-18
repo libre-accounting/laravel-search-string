@@ -14,7 +14,7 @@ class ParserTest extends VisitorTest
         ];
     }
 
-    public function success()
+    public static function success()
     {
         return [
             // Assignments.
@@ -110,7 +110,7 @@ class ParserTest extends VisitorTest
         ];
     }
 
-    public function failure()
+    public static function failure()
     {
         return [
             // Unfinished.

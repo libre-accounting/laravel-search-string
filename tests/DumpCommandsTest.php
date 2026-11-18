@@ -49,20 +49,20 @@ class DumpCommandsTest extends TestCase
 
     public function ast(string $query)
     {
-        return $this->query('ast', $query);
+        return $this->runDumpCommand('ast', $query);
     }
 
     public function sql(string $query)
     {
-        return $this->query('sql', $query);
+        return $this->runDumpCommand('sql', $query);
     }
 
-    public function result(string $query)
+    public function queryResult(string $query)
     {
-        return $this->query('get', $query);
+        return $this->runDumpCommand('get', $query);
     }
 
-    public function query(string $type, string $query)
+    public function runDumpCommand(string $type, string $query)
     {
         Artisan::call(sprintf('search-string:%s /Lorisleiva/LaravelSearchString/Tests/Stubs/Product "%s"', $type, $query));
 

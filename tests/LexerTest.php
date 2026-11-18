@@ -4,7 +4,7 @@ namespace Lorisleiva\LaravelSearchString\Tests;
 
 class LexerTest extends TestCase
 {
-    public function success()
+    public static function success()
     {
         return [
             // Strings.

@@ -18,7 +18,7 @@ class VisitorRemoveNotSymbolTest extends VisitorTest
         ];
     }
 
-    public function success()
+    public static function success()
     {
         return [
             // Negate query symbols.

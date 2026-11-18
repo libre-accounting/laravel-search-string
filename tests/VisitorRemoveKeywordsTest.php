@@ -20,7 +20,7 @@ class VisitorRemoveKeywordsTest extends VisitorTest
         ];
     }
 
-    public function success()
+    public static function success()
     {
         return [
             // It transforms keyword queries into empty symbols.
